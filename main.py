@@ -26,7 +26,7 @@ class HealthResponse(BaseModel):
 
 
 def seed_demo_data():
-    """Seed minimal demo data if collections are empty for first-time preview."""
+    """Seed minimal demo data if collections are empty and ensure requested faculty exist."""
     if db is None:
         return
     try:
@@ -34,10 +34,34 @@ def seed_demo_data():
         if db["program"].count_documents({}) == 0:
             create_document("program", Program(name="B.Tech Computer Science", department="CSE", level="UG", duration_years=4, description="Core CS curriculum with electives in AI/ML", semesters=8))
             create_document("program", Program(name="M.Tech Data Science", department="CSE", level="PG", duration_years=2, description="Advanced DS/ML program", semesters=4))
-        # Faculty
+        # Faculty (basic demo)
         if db["faculty"].count_documents({}) == 0:
             create_document("faculty", FacultySchema(name="Dr. A. Sharma", designation="Professor", department="CSE", email="asharma@nijt.ac.in", research_areas=["AI", "Computer Vision"]))
             create_document("faculty", FacultySchema(name="Dr. R. Kaur", designation="Assistant Professor", department="ECE", email="rkaur@nijt.ac.in", research_areas=["VLSI", "Embedded Systems"]))
+        
+        # Ensure specific HOD/HOF entries exist regardless of initial seed
+        ensure_list = [
+            {"name": "KAVYA GUPTA", "designation": "HOD", "department": "CSE"},
+            {"name": "BHAVYA SHARMA", "designation": "HOD", "department": "ME"},
+            {"name": "ALEX POT", "designation": "HOF", "department": "CE"},
+        ]
+        for item in ensure_list:
+            try:
+                exists = db["faculty"].count_documents({"name": item["name"], "department": item["department"]}) > 0
+                if not exists:
+                    create_document(
+                        "faculty",
+                        FacultySchema(
+                            name=item["name"],
+                            designation=item["designation"],
+                            department=item["department"],
+                            email=None,
+                            research_areas=[],
+                        ),
+                    )
+            except Exception:
+                pass
+
         # Events
         if db["event"].count_documents({}) == 0:
             from datetime import date, timedelta
